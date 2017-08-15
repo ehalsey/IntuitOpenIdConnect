@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,24 +15,52 @@ using TestIntuitOICD.Models;
 
 namespace TestIntuitOICD.Services
 {
+    public class LoggingEvents
+    {
+        public const int HttpPost = 1000;
+    }
+
     public class QuickBooksService : IQuickBooksService
     {
-        public async Task<string> PostToQuickBooks(UserManager<ApplicationUser> UserManager, ClaimsPrincipal User, string endPoint, string body)
+        private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger _logger;
+        private readonly TelemetryClient _telemetry;
+
+        public QuickBooksService(IConfiguration Configuration, IHttpContextAccessor HttpContextAccessor, UserManager<ApplicationUser> UserManager, ILogger<QuickBooksService> Logger)
         {
+            _configuration = Configuration;
+            _httpContextAccessor = HttpContextAccessor;
+            _userManager = UserManager;
+            _logger = Logger;
+            _telemetry = new TelemetryClient();
+        }
+
+        public async Task<string> PostToQuickBooks(string endPoint, string body)
+        {
+            ClaimsPrincipal User = _httpContextAccessor.HttpContext.User;
             var result = "";
-            var user = await UserManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{UserManager.GetUserId(User)}'.");
+                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
             if (User.Identity.IsAuthenticated)
             {
-                var externalAccessToken = await UserManager.GetAuthenticationTokenAsync(user, "OpenIdConnect", "access_token");
+                var externalAccessToken = await _userManager.GetAuthenticationTokenAsync(user, "OpenIdConnect", "access_token");
                 var company = user.QBCompany;
-                var baseUrl = $"https://sandbox-quickbooks.api.intuit.com/v3/company/{company}/";
+                var baseUrl = _configuration["QuickBooksAPIEndpoint"].Replace("{company}", user.QBCompany);
                 // send the request
-                result = await MakePostRequest(externalAccessToken, body, baseUrl + endPoint);
+                _logger.LogInformation(LoggingEvents.HttpPost,"Posting to QBO:\r\n{body}",body);
+                // Establish an operation context and associated telemetry item:
+                using (var operation = _telemetry.StartOperation<RequestTelemetry>("QuickBooks Post"))
+                {
+                    result = await MakePostRequest(externalAccessToken, body, baseUrl + endPoint);
+                    _telemetry.StopOperation(operation);
+
+                } // When operation is disposed, telemetry item is sent.
             }
             return result;
         }

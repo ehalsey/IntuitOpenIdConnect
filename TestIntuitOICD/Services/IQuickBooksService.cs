@@ -10,6 +10,6 @@ namespace TestIntuitOICD.Services
 {
     public interface IQuickBooksService
     {
-        Task<string> PostToQuickBooks(UserManager<ApplicationUser> UserManager, ClaimsPrincipal User, string endPoint, string body);
+        Task<string> PostToQuickBooks(string endPoint, string body);
     }
 }

@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TestIntuitOICD.Models.QuickBooksViewModels;
-using Microsoft.AspNetCore.Identity;
-using TestIntuitOICD.Models;
-using Microsoft.Extensions.Logging;
-using System.Net;
-using System.IO;
 using TestIntuitOICD.Services;
 using TestIntuitOICD.Models.QuickBooks;
 using Newtonsoft.Json;
@@ -18,19 +12,10 @@ namespace TestIntuitOICD.Controllers
 {
     public class QuickBooksInvoiceController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly ILogger _logger;
         private readonly IQuickBooksService _quickbookservice;
 
-        public QuickBooksInvoiceController(UserManager<ApplicationUser> userManager,
-          SignInManager<ApplicationUser> signInManager,
-          ILogger<ManageController> logger,
-          IQuickBooksService quickBooksService)
+        public QuickBooksInvoiceController(IQuickBooksService quickBooksService)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _logger = logger;
             _quickbookservice = quickBooksService;
         }
 
@@ -61,7 +46,7 @@ namespace TestIntuitOICD.Controllers
                     CustomerRef = new CustomerRef() { value = model.CustomerRef},
                     Lines = new List<Line>() { new Line() { Amount = model.Amount, SalesItemLineDetail = new SalesItemLineDetail() { ItemRef = new ItemRef() { name = model.ItemName, value = model.ItemRef } } } }
                 };
-                StatusMessage = await _quickbookservice.PostToQuickBooks(_userManager, User, "/invoice", JsonConvert.SerializeObject(inv));
+                StatusMessage = await _quickbookservice.PostToQuickBooks("/invoice", JsonConvert.SerializeObject(inv));
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)

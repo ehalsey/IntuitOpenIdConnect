@@ -1,0 +1,24 @@
+﻿{
+  "BillAddr": {
+    "Line1": "123 Main Street",
+    "City": "Mountain View",
+    "Country": "USA",
+    "CountrySubDivisionCode": "CA",
+    "PostalCode": "94042"
+  },
+  "Notes": "Here are other details.",
+  "Title": "Mr",
+  "GivenName": "James",
+  "MiddleName": "B",
+  "FamilyName": "King",
+  "Suffix": "Jr",
+  "FullyQualifiedName": "King Groceries",
+  "CompanyName": "King Groceries",
+  "DisplayName": "King's Groceries",
+  "PrimaryPhone": {
+    "FreeFormNumber": "(555) 555-5555"
+  },
+  "PrimaryEmailAddr": {
+    "Address": "jdrew@myemail.com"
+  }
+}
